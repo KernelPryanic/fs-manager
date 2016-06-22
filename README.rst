@@ -41,7 +41,7 @@ Or you can just use it as an object
       fsm.ls()
       fsm.back()
       fsm.ls()
-      fsm.rm("alias")
+      fsm.rm("tom")
 
 There is much more inside :)
 
