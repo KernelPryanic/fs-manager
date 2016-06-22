@@ -1,7 +1,5 @@
 ![language](https://img.shields.io/badge/language-python-blue.svg)
-
 ![license](https://img.shields.io/badge/license-Apache%202-blue.svg)
-
 ![coverage](https://img.shields.io/codecov/c/github/codecov/example-python.svg?maxAge=2592000)
 
 # fs-manager
@@ -11,12 +9,11 @@ This module is designed to relief and simplify interaction of your
 python modules with the file system.
 
 ### Installation
-
 ```python setup.py install```
 
 ### How to use
-
 For example, you can inherit your class from `FSManager` class
+
 ```
 from fs_manager import FSManager
 
