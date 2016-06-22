@@ -244,8 +244,8 @@ class TestFSManager(unittest.TestCase):
     def test_small_manipulations(self):
         try:
             with FSManager(base_path="/tmp/small_manipulations",
-                                 mode=0o744, temporary=False,
-                                 rand_prefix=False) as rm:
+                           mode=0o744, temporary=False,
+                           rand_prefix=False) as rm:
                 rm.mkdir("rambo", "rambo_dir", 0o744, False)
                 rm.cd("rambo")
                 rm.mkfile("rambo", "rambo_file", True)
