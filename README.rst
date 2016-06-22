@@ -14,6 +14,14 @@ Installation
 
 ``python setup.py install``
 
+or
+
+``pip install -e .``
+
+or
+
+``pip install fs-manager``
+
 How to use
 ~~~~~~~~~~
 
