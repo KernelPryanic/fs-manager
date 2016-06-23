@@ -9,7 +9,7 @@ from fs_manager import FSManager
 class TestFSManager(unittest.TestCase):
     def test_init(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             if not os.path.exists(rm.prefix_path):
                 raise Exception("FSManager hasn't been initialized")
         except Exception as exc:
@@ -18,7 +18,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_del(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             prefix_path = rm.prefix_path
             del rm
             if os.path.exists(prefix_path):
@@ -27,9 +27,20 @@ class TestFSManager(unittest.TestCase):
             traceback.print_exc()
             self.fail(exc)
 
+    def test_init_from_precreated(self):
+        try:
+            precreated = "/tmp/precreated"
+            os.mkdir(precreated)
+            rm = FSManager(precreated, 0o744, temporary=True)
+            if oct(os.stat(precreated).st_mode & 0o777) != oct(0o744):
+                raise Exception("Failed to initialize from pre-created")
+        except Exception as exc:
+            traceback.print_exc()
+            self.fail(exc)
+
     def test_mkfile(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkfile("test/test1")
             if not os.path.exists(os.path.join(rm.prefix_path, "test")):
                 raise Exception("File hasn't been created")
@@ -39,7 +50,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_mkdir(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkdir("test/test1")
             if not os.path.exists(os.path.join(rm.prefix_path, "test")):
                 raise Exception("File hasn't been created")
@@ -49,7 +60,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_file(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkfile(alias="rambo", path="test/test1")
             if rm.file("rambo") is None:
                 raise Exception("Couldn't find a file")
@@ -59,7 +70,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_dir(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkdir(alias="rambo", path="test/test1")
             if rm.dir("rambo") is None:
                 raise Exception("Couldn't find a directory")
@@ -69,7 +80,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_open(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkfile(alias="rambo", path="test/test1")
             with rm.open("rambo", "w") as f:
                 f.write("rambo test")
@@ -82,7 +93,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_remove(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkdir("test1/test2")
             rm.mkfile("test3/test4/test_file")
             rm.remove()
@@ -94,7 +105,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_exists(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkdir("test1/test2")
             if os.path.exists(rm.dir("test1/test2").path) != \
                     rm.exists("test1/test2"):
@@ -105,7 +116,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_chmod_file(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkfile("rambo", "test1/test2/test3")
             rm.chmod("rambo", 0o644)
             if oct(os.stat(rm.file("rambo").path).
@@ -117,7 +128,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_chmod_dir(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkdir("rambo", "test1/test2/test3")
             rm.chmod("rambo", 0o644)
             if oct(os.stat(rm.dir("rambo").path).
@@ -129,7 +140,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_rm_file(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkfile("rambo", "test1/test2/test3")
             rm.rm("rambo")
             if rm.exists("test1/test2/test3"):
@@ -140,7 +151,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_rm_dir(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkdir("rambo", "test1/test2/test3")
             rm.rm("rambo")
             if rm.exists("test1/test2/test3"):
@@ -151,7 +162,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_cp_file(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkfile("rambo", "test1/test2/test3")
             rm.cp("rambo", "test1/test22/test33")
             if not rm.exists("test1/test22/test33"):
@@ -162,7 +173,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_cp_dir(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkdir("rambo", "test1/test2/test3")
             rm.cp("rambo", "test1/test22/test33")
             if not rm.exists("test1/test22/test33"):
@@ -173,7 +184,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_cp_file_abs(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkfile("rambo", "test1/test2/test3")
             rm.cp("rambo", os.path.join(rm.prefix_path, "test1/test22/test33"))
             if not os.path.exists(os.path.join(rm.prefix_path,
@@ -185,7 +196,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_cp_dir_abs(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkdir("rambo", "test1/test2/test3")
             rm.cp("rambo", os.path.join(rm.prefix_path, "test1/test22/test33"))
             if not os.path.exists(os.path.join(rm.prefix_path,
@@ -197,7 +208,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_mv_file(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkfile("rambo", "test1/test2/test3")
             rm.mv("rambo", "test1/test22/test33")
             if not rm.exists("test1/test22/test33"):
@@ -208,7 +219,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_mv_dir(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkdir("rambo", "test1/test2/test3")
             rm.mv("rambo", "test1/test22/test33")
             if not rm.exists("test1/test22/test33"):
@@ -219,7 +230,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_mv_file_abs(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkfile("rambo", "test1/test2/test3")
             rm.mv("rambo", os.path.join(rm.prefix_path, "test1/test22/test33"))
             if not os.path.exists(os.path.join(rm.prefix_path,
@@ -231,7 +242,7 @@ class TestFSManager(unittest.TestCase):
 
     def test_mv_dir_abs(self):
         try:
-            rm = FSManager(temporary=True, rand_prefix=True)
+            rm = FSManager(temporary=True)
             rm.mkdir("rambo", "test1/test2/test3")
             rm.mv("rambo", os.path.join(rm.prefix_path, "test1/test22/test33"))
             if not os.path.exists(os.path.join(rm.prefix_path,
@@ -244,8 +255,7 @@ class TestFSManager(unittest.TestCase):
     def test_small_manipulations(self):
         try:
             with FSManager(base_path="/tmp/small_manipulations",
-                           mode=0o744, temporary=False,
-                           rand_prefix=False) as rm:
+                           mode=0o744, temporary=False) as rm:
                 rm.mkdir("rambo", "rambo_dir", 0o744, False)
                 rm.cd("rambo")
                 rm.mkfile("rambo", "rambo_file", True)

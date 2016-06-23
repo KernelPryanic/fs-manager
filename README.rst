@@ -32,7 +32,7 @@ For example, you can inherit your class from ``FSManager`` class
     from fs_manager import FSManager
 
     class Foo(FSManager, ...):
-      FSManager.__init__(self, base_path="/some/base", mode=0o744, temporary=True, rand_prefix=True)
+      FSManager.__init__(self, base_path="/some/base", mode=0o744, temporary=True)
         ...
 
 Or you can just use it as an object
@@ -41,7 +41,7 @@ Or you can just use it as an object
 
     from fs_manager import FSManager
 
-    with FSManager(base_path="/tmp/base", mode=0o744, temporary=True, rand_prefix=True) as fsm:
+    with FSManager(base_path="/tmp/base", mode=0o744, temporary=True) as fsm:
       fsm.mkdir(alias="tom", path="tom_dir", mode=0o744, temporary=True)
       fsm.cd("tom")
       fsm.mkdir("tom_dir")

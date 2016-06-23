@@ -470,8 +470,9 @@ class AliasedDirectoryObject(MutableMapping, DirectoryObject, object):
 
     # Collection methods end
 
-    # `pop` overwrites because of overwriting of `__getitem__` method such way
-    # `pop` tries to get element by index, but here is accepts key instead
+    # `pop` overwrites because of overwriting of `__getitem__` method
+    #  thus `pop` tries to get element by index
+    #  but `__getitem__` accepts key instead
     def pop(self, idx):
         '''Return resource on "idx" index and delete it then'''
 
@@ -485,7 +486,7 @@ class FSManager(object):
     alias_n = {"file": 0, "dir": 0}
 
     def __init__(self, base_path="/tmp/resource-manager/", mode=0o700,
-                 temporary=False, rand_prefix=False):
+                 temporary=False):
         '''
         Initialize ResourceManger within the prefix path
 
@@ -495,17 +496,15 @@ class FSManager(object):
         @type mode: L{int}
         @param temporary: Is this FSManager has to be deleted
         with all the resources under it after script is done?
+        Also randomly generated directory will be used as prefix.
         @type temporary: L{bool}
-        @param rand_prefix: Is the prefix have to be created randomly
-        with tempfile?
-        @type rand_prefix: L{bool}
         '''
 
         self.base_path = os.path.abspath(base_path)
         self.temporary = temporary
         DirectoryObject(self.base_path, mode)
         self.prefix_path = tempfile.mkdtemp(prefix=self.base_path + "/") \
-            if rand_prefix else self.base_path
+            if self.temporary else self.base_path
         self.resources = AliasedDirectoryObject(self.prefix_path, mode,
                                                 temporary)
         self.current_directory = self.resources
