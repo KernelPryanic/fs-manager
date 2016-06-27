@@ -19,8 +19,9 @@ class TestFileObject(unittest.TestCase):
         try:
             with open("test", "w") as f:
                 f.write("rambo test")
+            perms = oct(os.stat("test").st_mode & 0o777)
             fo = FileObject("test", temporary=True)
-            if oct(os.stat("test").st_mode & 0o777) != oct(0o600):
+            if oct(os.stat("test").st_mode & 0o777) != perms:
                 raise Exception("Couldn't init from file")
         except Exception as exc:
             traceback.print_exc()

@@ -47,9 +47,47 @@ Or you can just use it as an object
       fsm.mkdir("tom_dir")
       fsm.mkfile("jerry", "jerry_file", 0o644, True)
       fsm.ls()
-      fsm.back()
+      fsm.up()
       fsm.ls()
       fsm.rm("tom")
+
+Save what you did
+
+::
+
+    from fs_manager import FSManager
+
+    with FSManager(base_path="/tmp/base", mode=0o744, temporary=True) as fsm:
+      fsm.mkdir(alias="tom", path="tom_dir", mode=0o744, temporary=True)
+      fsm.cd("tom")
+      fsm.mkdir("tom_dir")
+      fsm.mkfile("jerry", "jerry_file", 0o644, True)
+      fsm.ls()
+      fsm.save_all()
+
+    ...
+    shutil.copy("/tmp/base/.fs-structure-full.json", "/tmp/another_base/.fs-structure-full.json")
+    ...
+    
+    with FSManager(base_path="/tmp/another_base", mode=0o744, temporary=True) as fsm:
+      fsm.load_all()
+
+Structure will be saved at root to ".fs-structure-full.json". But structure
+saves automatically when ``temporary=False``. So if you initialize
+from the same directory, structure loads anyway.
+
+Initialize you fs-manager from the directory on your disk
+
+::
+
+    from fs_manager import FSManager
+
+    with FSManager(base_path="/tmp/base", mode=0o744, temporary=True) as fsm:
+      fsm.snappy(root_binded=True)
+      fsm.cd("Mercury")
+
+Thus, if ``root_binded=True`` your structure will be initialized from one root.
+In other words, you'll be able to ``cd`` right from the root fs-manager object.
 
 There is much more inside :)
 

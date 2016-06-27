@@ -8,6 +8,7 @@ import hashlib
 import re
 import logger
 import logging
+import json
 
 
 log = logging.getLogger()
@@ -47,7 +48,7 @@ class FileObject(object):
         self.file_path = re_url_long_head.search(self.path).group(0)
 
         if os.path.exists(self.path):
-            self.mode = mode
+            self.mode = os.stat(self.path).st_mode
         else:
             self._mode = mode
             self.create()
@@ -55,6 +56,9 @@ class FileObject(object):
     def __del__(self):
         if self.temporary and os.path.exists(self.path):
             self.remove()
+
+    def __eq__(self, other):
+        return isinstance(other, FileObject) and self.path == other.path
 
     def __repr__(self):
         return "{}({})".format(
@@ -236,16 +240,16 @@ class DirectoryObject(MutableSequence, object):
         @type temporary: L{bool}
         '''
 
-        self._parent = None
-        self.parent = parent
         self._path = os.path.abspath(path)
         self.temporary = temporary
         self.dir_name = re_url_tail.search(self.path).group(0)
         self.dir_path = re_url_long_head.search(self.path).group(0)
         self.resources = []
+        self._parent = None
+        self.parent = parent
 
         if os.path.exists(self.path):
-            self.mode = mode
+            self._mode = os.stat(self.path).st_mode
         else:
             self._mode = mode
             self.create()
@@ -272,6 +276,9 @@ class DirectoryObject(MutableSequence, object):
     def __del__(self):
         if self.temporary and os.path.exists(self.path):
             self.remove()
+
+    def __eq__(self, other):
+        return isinstance(other, DirectoryObject) and self.path == other.path
 
     def __repr__(self):
         return "{}({})".format(
@@ -470,6 +477,9 @@ class AliasedDirectoryObject(MutableMapping, DirectoryObject, object):
 
     # Collection methods end
 
+    def __eq__(self, other):
+        return isinstance(other, DirectoryObject) and self.path == other.path
+
     # `pop` overwrites because of overwriting of `__getitem__` method
     #  thus `pop` tries to get element by index
     #  but `__getitem__` accepts key instead
@@ -485,7 +495,7 @@ class FSManager(object):
                        "Saturn", "Uranus", "Neptune", "Plutone"]
     alias_n = {"file": 0, "dir": 0}
 
-    def __init__(self, base_path="/tmp/resource-manager/", mode=0o700,
+    def __init__(self, base_path="/tmp/fs-manager/", mode=0o700,
                  temporary=False):
         '''
         Initialize ResourceManger within the prefix path
@@ -501,13 +511,17 @@ class FSManager(object):
         '''
 
         self.base_path = os.path.abspath(base_path)
-        self.temporary = temporary
-        DirectoryObject(self.base_path, mode)
+        self._temporary = temporary
+        DirectoryObject(self.base_path, mode).chmod(mode)
+
         self.prefix_path = tempfile.mkdtemp(prefix=self.base_path + "/") \
             if self.temporary else self.base_path
-        self.resources = AliasedDirectoryObject(self.prefix_path, mode,
-                                                temporary)
-        self.current_directory = self.resources
+
+        self.root_directory = AliasedDirectoryObject(self.prefix_path, mode,
+                                                     temporary)
+        self.current_directory = self.root_directory
+        self.pred = self.current_directory
+        self.load()
 
     def __del__(self):
         if self.temporary and os.path.exists(self.prefix_path):
@@ -519,8 +533,19 @@ class FSManager(object):
     def __exit__(self, exc_type, exc_value, traceback):
         self.__del__()
 
-    @staticmethod
-    def _prepare(path):
+    @property
+    def temporary(self):
+        return self._temporary
+
+    @temporary.setter
+    def temporary(self, value):
+        pass
+
+    @temporary.deleter
+    def temporary(self):
+        del self.temporary
+
+    def _prepare(self, path):
         '''
         Pre-create row of the directories for resource
 
@@ -528,7 +553,8 @@ class FSManager(object):
         @type path: L{str}
         '''
 
-        prefix = re_url_long_head.search(path).group(0)
+        abs_path = self.abspath(path)
+        prefix = re_url_long_head.search(abs_path).group(0)
         if not os.path.exists(prefix):
             try:
                 os.makedirs(prefix)
@@ -595,36 +621,64 @@ class FSManager(object):
         '''
 
         if self.dir(alias) is not None:
+            self.pred = self.current_directory
             self.prefix_path = self.dir(alias).path
             self.current_directory = self.dir(alias)
         else:
-            log.info("There is no such alias '{}'".format(alias))
+            log.info("There is no such directory '{}'".format(alias))
 
-    def back(self):
-        '''Switch prefix path to parent'''
+    def up(self):
+        '''Switch to parent directory'''
 
         if self.current_directory.parent:
+            self.pred = self.current_directory
             self.prefix_path = self.abspath(self.current_directory.parent.path)
             self.current_directory = self.current_directory.parent
 
+    def back(self):
+        '''Switch to previous directory'''
+
+        self.prefix_path = self.abspath(self.pred.path)
+        self.current_directory = self.pred
+
+    def cd_root(self):
+        '''Return working directory to the prefix path'''
+
+        self.prefix_path = self.root_directory.path
+        self.current_directory = self.root_directory
+
     @contextmanager
     def open(self, alias, mode="r"):
-        '''Open file at relative path'''
+        '''
+        Open file at relative path
+
+        @param alias: Alias or relative path
+        @type alias: L{str}
+        @param mode: Mode of operating
+        @param mode: L{str}
+        '''
 
         if self.file(alias) is not None:
+            f = open(self.file(alias).path, mode)
+        else:
             try:
-                f = open(self.file(alias).path, mode)
-                yield f
-                f.close()
+                f = open(self.abspath(alias), mode)
             except IOError as exc:
-                log.error("Can't open file")
+                log.error("Can't open file {}".format(self.abspath(alias)))
                 raise exc
+
+        try:
+            yield f
+            f.close()
+        except IOError as exc:
+            log.error("Can't open file {}".format(self.abspath(path)))
+            raise exc
 
     def remove(self):
         '''CAUTION: Remove all the resources under prefix path'''
 
         try:
-            shutil.rmtree(self.resources.path)
+            shutil.rmtree(self.root_directory.path)
         except IOError as exc:
             log.error("Can't remove prefix path")
             raise exc
@@ -681,6 +735,8 @@ class FSManager(object):
             self.current_directory[_alias] = FileObject(abs_path, mode,
                                                         temporary,
                                                         self.current_directory)
+            if not self.temporary:
+                self.save()
 
     def mkdir(self, alias=None, path=None, mode=0o700, temporary=False):
         '''
@@ -712,6 +768,8 @@ class FSManager(object):
             self.current_directory[_alias] = \
                 AliasedDirectoryObject(abs_path, mode, temporary,
                                        self.current_directory)
+            if not self.temporary:
+                self.save()
 
     def chmod(self, alias, mode):
         '''
@@ -725,6 +783,8 @@ class FSManager(object):
 
         if self.resource(alias) is not None:
             self.current_directory[alias].chmod(mode)
+            if not self.temporary:
+                self.save()
 
     def rm(self, alias):
         '''
@@ -737,6 +797,8 @@ class FSManager(object):
         if self.resource(alias) is not None:
             self.current_directory[alias].remove()
             del self.current_directory[alias]
+            if not self.temporary:
+                self.save()
 
     def cp(self, alias, dst):
         '''
@@ -770,7 +832,7 @@ class FSManager(object):
         '''List all the resources under prefix'''
 
         if not self.current_directory:
-            return "No one resource has been created yet"
+            return ""
 
         res = ""
         dash = " ------- "
@@ -784,8 +846,8 @@ class FSManager(object):
             tabs = "\t" * tabs_n
             type = "[File]\t\t" if isinstance(val, FileObject) \
                 else "[Directory]\t"
-            res += "{0}{3}{4}{2}{1}\n".format(key, val.path, dash * 5,
-                                              tabs, type)
+            res += "{0}{3}{4}{5}\t{2}{1}\n".format(key, val.path, dash * 5,
+                                                   tabs, type, oct(val.mode))
         print res
 
     def generate_alias(self, type):
@@ -810,3 +872,205 @@ class FSManager(object):
         self.alias_n[type] += 1
 
         return new_alias
+
+    def save(self):
+        '''Save current fs entry to structure .json file'''
+
+        current_fs_struct = dict()
+        for alias, value in self.current_directory.iteritems():
+            current_fs_struct[alias] = \
+            {"path": os.path.relpath(value.path, self.root_directory.path),
+             "mode": value.mode,
+             "temporary": value.temporary}
+
+            if isinstance(value, FileObject):
+                current_fs_struct[alias]["type"] = "file"
+            else:
+                current_fs_struct[alias]["type"] = "directory"
+
+        with self.open(".fs-structure.json", "w") as f:
+            f.write(unicode(json.dumps(current_fs_struct,
+                                       indent=4,
+                                       separators=(',', ':'),
+                                       ensure_ascii=False)))
+
+    def load(self):
+        '''Load current fs entry from structure .json file'''
+
+        if self.exists(".fs-structure.json"):
+            current_fs_struct = dict()
+            with self.open(".fs-structure.json", "r") as f:
+                current_fs_struct = json.load(f)
+
+            for alias, value in current_fs_struct.iteritems():
+                if value["type"] == "file":
+                    self.mkfile(alias, value["path"], value["mode"],
+                                value["temporary"])
+                else:
+                    self.mkdir(alias, value["path"], value["mode"],
+                               value["temporary"])
+                    self.cd(alias)
+                    self.load()
+                    self.up()
+
+    def snappy(self, root_binded=False):
+        '''
+        Creates structure by walking for current directory and subdirectories
+
+        @param root_binded: All the resources of fs structure will be binded
+        within one root if that parameter is True
+        @type root_binded: L{bool}
+        '''
+
+        def dir_cerator(long_path):
+            head = re_url_head.search(long_path)
+            tail = re_url_long_tail.search(long_path)
+            if head:
+                self.mkdir(head.group(0))
+                self.cd(head.group(0))
+                if tail:
+                    dir_cerator(tail.group(0)[1:])
+                self.up()
+
+        def file_creator(long_path):
+            head = re_url_head.search(long_path)
+            tail = re_url_long_tail.search(long_path)
+            if head:
+                if tail:
+                    self.cd(head.group(0))
+                    file_creator(tail.group(0)[1:])
+                else:
+                    self.mkfile(head.group(0))
+                self.up()
+
+        for path, dirs, files in os.walk(self.prefix_path):
+            for dir_entry in dirs:
+                full_path = os.path.relpath(os.path.join(path, dir_entry),
+                                            self.prefix_path)
+                if root_binded:
+                    self.mkdir(path=full_path)
+                else:
+                    dir_cerator(full_path)
+            for file_entry in files:
+                full_path = os.path.relpath(os.path.join(path, file_entry),
+                                            self.prefix_path)
+                if root_binded:
+                    self.mkfile(path=full_path)
+                else:
+                    file_creator(full_path)
+
+    def save_all(self, path=".fs-structure-full.json"):
+        '''
+        Save full file system structure to one file
+
+        @param path: Path to the structure file
+        @type path: L{str}
+        '''
+
+        self.cd_root()
+        fs_struct = dict()
+
+        def decompose(current_fs_struct):
+            for alias, value in self.current_directory.iteritems():
+                current_fs_struct[alias] = \
+                {"path": os.path.relpath(value.path, self.root_directory.path),
+                 "mode": value.mode,
+                 "temporary": value.temporary}
+
+                if isinstance(value, DirectoryObject):
+                    current_fs_struct[alias]["resources"] = dict()
+                    self.cd(alias)
+                    decompose(current_fs_struct[alias]["resources"])
+                    self.up()
+
+        decompose(fs_struct)
+        with self.open(path, "w") as f:
+            f.write(unicode(json.dumps(fs_struct,
+                                       indent=4,
+                                       separators=(',', ':'),
+                                       ensure_ascii=False)))
+
+    def load_all(self, path=".fs-structure-full.json"):
+        '''
+        Load full system structure from one file
+
+        @param path: Path to the structure file
+        @type path: L{str}
+        '''
+
+        self.cd_root()
+        fs_struct = dict()
+
+        def compose(current_fs_struct):
+            for alias, value in current_fs_struct.iteritems():
+                if "resources" in value:
+                    self.mkdir(alias, value["path"], value["mode"],
+                               value["temporary"])
+                    self.cd(alias)
+                    compose(current_fs_struct[alias]["resources"])
+                    self.up()
+                else:
+                    self.mkfile(alias, value["path"], value["mode"],
+                                value["temporary"])
+
+        with self.open(path, "r") as f:
+            fs_struct = json.load(f)
+        compose(fs_struct)
+
+    def save_hashsums(self, type="md5"):
+        '''
+        Save file's hashes to .json structure file
+
+        @param type: Hashsum method
+        @type type: L{str}
+        '''
+
+        if self.exists(".fs-structure.json"):
+            current_fs_struct = dict()
+            with self.open(".fs-structure.json", "r") as f:
+                current_fs_struct = json.load(f)
+
+            if type in ["md5", "sha1"]:
+                for alias, value in self.current_directory.iteritems():
+                    if isinstance(value, FileObject):
+                        current_fs_struct[alias][type] = getattr(value, type)()
+                    else:
+                        self.cd(alias)
+                        self.save_hashsums(type)
+                        self.up()
+
+            with self.open(".fs-structure.json", "w") as f:
+                f.write(unicode(json.dumps(current_fs_struct,
+                                           indent=4,
+                                           separators=(',', ':'),
+                                           ensure_ascii=False)))
+
+    def check_hashsums(self, type="md5"):
+        '''
+        Compare current file hashes to saved in the .json structure file
+
+        @param type: Hashsum method
+        @type type: L{str}
+        '''
+
+        if self.exists(".fs-structure.json"):
+            match = True
+            loaded_fs_struct = dict()
+            with self.open(".fs-structure.json", "r") as f:
+                loaded_fs_struct = json.load(f)
+
+            if type in ["md5", "sha1"]:
+
+                for alias, value in self.current_directory.iteritems():
+                    if isinstance(value, FileObject):
+                        if loaded_fs_struct[alias][type] != getattr(value,
+                                                                    type)():
+                            log.warning("Hashsum mismatch for {}".
+                                        format(value.path))
+                            match = False
+                    else:
+                        self.cd(alias)
+                        self.check_hashsums(type)
+                        self.up()
+
+            return match

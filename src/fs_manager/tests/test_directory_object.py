@@ -18,8 +18,9 @@ class TestDirectoryObject(unittest.TestCase):
     def test_init_from_precreated(self):
         try:
             os.mkdir("test")
+            perms = oct(os.stat("test").st_mode & 0o777)
             do = DirectoryObject("test", temporary=True)
-            if oct(os.stat("test").st_mode & 0o777) != oct(0o700):
+            if oct(os.stat("test").st_mode & 0o777) != perms:
                 raise Exception("Couldn't init from directory")
         except Exception as exc:
             traceback.print_exc()
