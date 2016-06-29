@@ -1,8 +1,5 @@
 |language| |license| |coverage|
 
-fs-manager
-==========
-
 Description
 ~~~~~~~~~~~
 
@@ -82,9 +79,9 @@ Initialize you fs-manager from the directory on your disk
 
     from fs_manager import FSManager
 
-    with FSManager(base_path="/tmp/base", mode=0o744, temporary=True) as fsm:
+    with FSManager(base_path="/tmp/base", mode=0o744, temporary=False) as fsm:
       fsm.snappy(root_binded=True)
-      fsm.cd("Mercury")
+      fsm.cd("some/path")
 
 Thus, if ``root_binded=True`` your structure will be initialized from one root.
 In other words, you'll be able to ``cd`` right from the root fs-manager object.

@@ -4,7 +4,6 @@ import os
 import shutil
 
 from fs_manager import FSManager
-from twisted.conch.client.default import SSHUserAuthClient
 
 
 class TestFSManager(unittest.TestCase):
@@ -189,7 +188,8 @@ class TestFSManager(unittest.TestCase):
         try:
             fsm = FSManager(temporary=True)
             fsm.mkfile("rambo", "test1/test2/test3")
-            fsm.cp("rambo", os.path.join(fsm.prefix_path, "test1/test22/test33"))
+            fsm.cp("rambo", os.path.join(fsm.prefix_path,
+                                         "test1/test22/test33"))
             if not os.path.exists(os.path.join(fsm.prefix_path,
                                                "test1/test22/test33")):
                 raise Exception("File hasn't been copied")
@@ -201,7 +201,8 @@ class TestFSManager(unittest.TestCase):
         try:
             fsm = FSManager(temporary=True)
             fsm.mkdir("rambo", "test1/test2/test3")
-            fsm.cp("rambo", os.path.join(fsm.prefix_path, "test1/test22/test33"))
+            fsm.cp("rambo", os.path.join(fsm.prefix_path,
+                                         "test1/test22/test33"))
             if not os.path.exists(os.path.join(fsm.prefix_path,
                                                "test1/test22/test33")):
                 raise Exception("Directory hasn't been copied")
@@ -235,7 +236,8 @@ class TestFSManager(unittest.TestCase):
         try:
             fsm = FSManager(temporary=True)
             fsm.mkfile("rambo", "test1/test2/test3")
-            fsm.mv("rambo", os.path.join(fsm.prefix_path, "test1/test22/test33"))
+            fsm.mv("rambo", os.path.join(fsm.prefix_path,
+                                         "test1/test22/test33"))
             if not os.path.exists(os.path.join(fsm.prefix_path,
                                                "test1/test22/test33")):
                 raise Exception("File hasn't been moved")
@@ -247,7 +249,8 @@ class TestFSManager(unittest.TestCase):
         try:
             fsm = FSManager(temporary=True)
             fsm.mkdir("rambo", "test1/test2/test3")
-            fsm.mv("rambo", os.path.join(fsm.prefix_path, "test1/test22/test33"))
+            fsm.mv("rambo", os.path.join(fsm.prefix_path,
+                                         "test1/test22/test33"))
             if not os.path.exists(os.path.join(fsm.prefix_path,
                                                "test1/test22/test33")):
                 raise Exception("Directory hasn't been moved")
@@ -364,7 +367,7 @@ class TestFSManager(unittest.TestCase):
             with FSManager(base_path="/tmp/fsm_tests/",
                            mode=0o744, temporary=False) as fsm:
                 fsm.snappy(True)
-                if fsm.file("MercuryFile") is None:
+                if fsm.file("water/fire/stone") is None:
                     raise Exception("Snappy doesn't work")
         except Exception as exc:
             traceback.print_exc()

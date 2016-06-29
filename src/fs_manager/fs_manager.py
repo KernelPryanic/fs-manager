@@ -491,10 +491,6 @@ class AliasedDirectoryObject(MutableMapping, DirectoryObject, object):
 
 
 class FSManager(object):
-    default_aliases = ["Mercury", "Venus", "Earth", "Mars", "Jupiter",
-                       "Saturn", "Uranus", "Neptune", "Plutone"]
-    alias_n = {"file": 0, "dir": 0}
-
     def __init__(self, base_path="/tmp/fs-manager/", mode=0o700,
                  temporary=False):
         '''
@@ -524,7 +520,7 @@ class FSManager(object):
         self.load()
 
     def __del__(self):
-        if self.temporary and os.path.exists(self.prefix_path):
+        if self.temporary and os.path.exists(self.root_directory.path):
             self.remove()
 
     def __enter__(self):
@@ -671,7 +667,7 @@ class FSManager(object):
             yield f
             f.close()
         except IOError as exc:
-            log.error("Can't open file {}".format(self.abspath(path)))
+            log.error("Can't open file {}".format(self.abspath(alias)))
             raise exc
 
     def remove(self):
@@ -717,12 +713,16 @@ class FSManager(object):
         @type mode: L{int}
         '''
 
+        if alias is None and path is None:
+            log.info("Please, specify either alias or path")
+            return
+
         if alias is None:
-            _alias = self.generate_alias("file")
+            _alias = path
         else:
             _alias = alias
         if path is None:
-            _path = _alias
+            _path = alias
         else:
             _path = path
 
@@ -750,12 +750,16 @@ class FSManager(object):
         @type mode: L{int}
         '''
 
+        if alias is None and path is None:
+            log.info("Please, specify either alias or path")
+            return
+
         if alias is None:
-            _alias = self.generate_alias("dir")
+            _alias = path
         else:
             _alias = alias
         if path is None:
-            _path = _alias
+            _path = alias
         else:
             _path = path
 
@@ -850,38 +854,15 @@ class FSManager(object):
                                                    tabs, type, oct(val.mode))
         print res
 
-    def generate_alias(self, type):
-        '''
-        Generate alias
-
-        @param type: Type of the alias (file/dir)
-        @type type: L{str}
-        @return: Generated alias
-        '''
-
-        x = self.alias_n[type] / len(self.default_aliases)
-        idx = self.alias_n[type] - x * len(self.default_aliases)
-
-        new_alias = self.default_aliases[idx]
-        if type == "dir":
-            new_alias += "Dir"
-        elif type == "file":
-            new_alias += "File"
-        if x:
-            new_alias += str(x)
-        self.alias_n[type] += 1
-
-        return new_alias
-
     def save(self):
         '''Save current fs entry to structure .json file'''
 
         current_fs_struct = dict()
         for alias, value in self.current_directory.iteritems():
             current_fs_struct[alias] = \
-            {"path": os.path.relpath(value.path, self.root_directory.path),
-             "mode": value.mode,
-             "temporary": value.temporary}
+                {"path": os.path.relpath(value.path, self.root_directory.path),
+                 "mode": value.mode,
+                 "temporary": value.temporary}
 
             if isinstance(value, FileObject):
                 current_fs_struct[alias]["type"] = "file"
@@ -948,14 +929,14 @@ class FSManager(object):
                 full_path = os.path.relpath(os.path.join(path, dir_entry),
                                             self.prefix_path)
                 if root_binded:
-                    self.mkdir(path=full_path)
+                    self.mkdir(full_path)
                 else:
                     dir_cerator(full_path)
             for file_entry in files:
                 full_path = os.path.relpath(os.path.join(path, file_entry),
                                             self.prefix_path)
                 if root_binded:
-                    self.mkfile(path=full_path)
+                    self.mkfile(full_path)
                 else:
                     file_creator(full_path)
 
@@ -973,9 +954,10 @@ class FSManager(object):
         def decompose(current_fs_struct):
             for alias, value in self.current_directory.iteritems():
                 current_fs_struct[alias] = \
-                {"path": os.path.relpath(value.path, self.root_directory.path),
-                 "mode": value.mode,
-                 "temporary": value.temporary}
+                    {"path": os.path.relpath(value.path,
+                                             self.root_directory.path),
+                     "mode": value.mode,
+                     "temporary": value.temporary}
 
                 if isinstance(value, DirectoryObject):
                     current_fs_struct[alias]["resources"] = dict()
