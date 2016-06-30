@@ -2,6 +2,7 @@ import traceback
 import unittest
 import os
 import shutil
+import json
 
 from fs_manager import FSManager
 
@@ -429,10 +430,56 @@ class TestFSManager(unittest.TestCase):
                 pass
 
     def test_save_hashsums(self):
-        pass
+        try:
+            os.makedirs("/tmp/fsm_tests")
+            with FSManager(base_path="/tmp/fsm_tests/",
+                           temporary=False) as fsm:
+                fsm.mkdir("test1")
+                fsm.mkfile("test1/test_file")
+                fsm.mkdir("test2")
+                fsm.cd("test2")
+                fsm.mkfile("test_file")
+                fsm.cd_root()
+                fsm.save_hashsums()
+            with open("/tmp/fsm_tests/test2/.fs-structure.json") as f:
+                loaded = json.load(f)
+                if "md5" not in loaded["test_file"]:
+                    raise Exception("Hashsum hasn't been saved")
+        except Exception as exc:
+            traceback.print_exc()
+            self.fail(exc)
+        finally:
+            try:
+                shutil.rmtree("/tmp/fsm_tests", ignore_errors=True)
+            except:
+                pass
 
     def test_check_hassums(self):
-        pass
+        try:
+            os.makedirs("/tmp/fsm_tests")
+            with FSManager(base_path="/tmp/fsm_tests/",
+                           temporary=False) as fsm:
+                fsm.mkdir("test1")
+                fsm.mkfile("test1/test_file")
+                fsm.mkdir("test2")
+                fsm.cd("test2")
+                fsm.mkfile("test_file")
+                fsm.cd_root()
+                fsm.save_hashsums()
+                with open("/tmp/fsm_tests/test2/test_file", "w") as f:
+                    f.write("change hashsum")
+                mismatch = fsm.check_hashsums(log_warnings=False)
+                if not mismatch:
+                    raise Exception("Checking of hashsums are failed")
+        except Exception as exc:
+            traceback.print_exc()
+            self.fail(exc)
+        finally:
+            try:
+                shutil.rmtree("/tmp/fsm_tests", ignore_errors=True)
+            except:
+                pass
+
 
 if __name__ == "__main__":
     unittest.main()

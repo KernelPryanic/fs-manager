@@ -86,6 +86,19 @@ Initialize you fs-manager from the directory on your disk
 Thus, if ``root_binded=True`` your structure will be initialized from one root.
 In other words, you'll be able to ``cd`` right from the root fs-manager object.
 
+Also you can verify hashsum of files under any prefix like that
+
+::
+
+    from fs_manager import FSManager
+
+    with FSManager(base_path="/tmp/base", mode=0o744, temporary=False) as fsm:
+      fsm.snappy(root_binded=True)
+      fsm.cd("some/path")
+      fsm.save_hashsums("sha1")
+      ...
+      mismatches = fsm.check_hashsums(type="sha1", log_warnings=False)
+
 There is much more inside :)
 
 .. |language| image:: https://img.shields.io/badge/language-python-blue.svg

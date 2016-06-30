@@ -1027,16 +1027,18 @@ class FSManager(object):
                                            separators=(',', ':'),
                                            ensure_ascii=False)))
 
-    def check_hashsums(self, type="md5"):
+    def check_hashsums(self, type="md5", log_warnings=True, mismatch=[]):
         '''
         Compare current file hashes to saved in the .json structure file
 
         @param type: Hashsum method
         @type type: L{str}
+        @param log_warnings: Log warnings about mismatch
+        @type log_warnings: L{bool}
+        @return: List of mismatches
         '''
 
         if self.exists(".fs-structure.json"):
-            match = True
             loaded_fs_struct = dict()
             with self.open(".fs-structure.json", "r") as f:
                 loaded_fs_struct = json.load(f)
@@ -1047,12 +1049,13 @@ class FSManager(object):
                     if isinstance(value, FileObject):
                         if loaded_fs_struct[alias][type] != getattr(value,
                                                                     type)():
-                            log.warning("Hashsum mismatch for {}".
-                                        format(value.path))
-                            match = False
+                            if log_warnings:
+                                log.warning("Hashsum mismatch for {}".
+                                            format(value.path))
+                            mismatch.append(value)
                     else:
                         self.cd(alias)
-                        self.check_hashsums(type)
+                        self.check_hashsums(type, log_warnings, mismatch)
                         self.up()
 
-            return match
+            return mismatch
