@@ -31,13 +31,13 @@ class FileObject(object):
         Create new file or use already existing one
 
         @param path: Path to file
-        @type path: L{str}
+        @type path: `str`
         @param parent: Parent resource
-        @type parent: L{DirectoryObject}
+        @type parent: `DirectoryObject`
         @param mode: Mode bits of file
-        @type mode: L{int}
+        @type mode: `int`
         @param temporary: Is this file has to be deleted when script is done?
-        @type temporary: L{bool}
+        @type temporary: `bool`
         '''
 
         self._parent = None
@@ -146,7 +146,7 @@ class FileObject(object):
         Change mode bits of file
 
         @param mode: Mode bits of the the file
-        @type mode: L{int}
+        @type mode: `int`
         '''
 
         try:
@@ -165,7 +165,7 @@ class FileObject(object):
         Move file to destination
 
         @param dst: Destination path with new file name included
-        @type dst: L{str}
+        @type dst: `str`
         '''
 
         abs_dst = os.path.abspath(dst)
@@ -181,9 +181,9 @@ class FileObject(object):
         Copy file to destination
 
         @param dst: Destination path with file name included
-        @type dst: L{str}
+        @type dst: `str`
         @param same_parent: Is the new file has same parent?
-        @type same_parent: L{bool}
+        @type same_parent: `bool`
         @return: New FileObject binded with new file
         '''
 
@@ -230,14 +230,14 @@ class DirectoryObject(MutableSequence, object):
         Create new directory or use already existing one
 
         @param path: Path to directory
-        @type path: L{str}
+        @type path: `str`
         @param parent: Parent resource
-        @type parent: L{DirectoryObject}
+        @type parent: `DirectoryObject`
         @param mode: Mode bits of directory
-        @type mode: L{int}
+        @type mode: `int`
         @param temporary: Is this directory has to be deleted
         when script is done?
-        @type temporary: L{bool}
+        @type temporary: `bool`
         '''
 
         self._path = os.path.abspath(path)
@@ -366,7 +366,7 @@ class DirectoryObject(MutableSequence, object):
         Change mode bits of the directory
 
         @param mode: Mode bits of the file
-        @type mode: L{int}
+        @type mode: `int`
         '''
 
         try:
@@ -386,7 +386,7 @@ class DirectoryObject(MutableSequence, object):
         Move directory to destination
 
         @param dst: Destination path with new file name included
-        @type dst: L{str}
+        @type dst: `str`
         '''
 
         abs_dst = os.path.abspath(dst)
@@ -401,9 +401,9 @@ class DirectoryObject(MutableSequence, object):
         Copy directory to destination
 
         @param dst: Destination path with directory name included
-        @type dst: L{str}
+        @type dst: `str`
         @param same_parent: Is the new directory has same parent?
-        @type same_parent: L{bool}
+        @type same_parent: `bool`
         @return: New DirectoryObject binded with new directory
         '''
 
@@ -497,13 +497,13 @@ class FSManager(object):
         Initialize ResourceManger within the prefix path
 
         @param base_path: Base path of the resources
-        @type base_path: L{str}
+        @type base_path: `str`
         @param mode: Mode bits of directory
-        @type mode: L{int}
+        @type mode: `int`
         @param temporary: Is this FSManager has to be deleted
         with all the resources under it after script is done?
         Also randomly generated directory will be used as prefix.
-        @type temporary: L{bool}
+        @type temporary: `bool`
         '''
 
         self.base_path = os.path.abspath(base_path)
@@ -546,7 +546,7 @@ class FSManager(object):
         Pre-create row of the directories for resource
 
         @param path: Initial path. Tail - name of file/directory, head - path.
-        @type path: L{str}
+        @type path: `str`
         '''
 
         abs_path = self.abspath(path)
@@ -563,7 +563,7 @@ class FSManager(object):
         Return FileObject/DirectoryObject resource if it's in there
 
         @param alias: Alias name of the resource
-        @type alias: L{str}
+        @type alias: `str`
         @return: FileObject/DirectoryObject resource
         '''
 
@@ -579,7 +579,7 @@ class FSManager(object):
         Return FileObject resource if it's in there
 
         @param alias: Alias name of the resource
-        @type alias: L{str}
+        @type alias: `str`
         @return: FileObject resource
         '''
 
@@ -596,7 +596,7 @@ class FSManager(object):
         Return DirectoryObject resource if it's in there
 
         @param alias: Alias name of the resource
-        @type alias: L{str}
+        @type alias: `str`
         @return: DirectoryObject resource
         '''
 
@@ -613,7 +613,7 @@ class FSManager(object):
         Switch prefix path
 
         @param alias: Alias of new prefix path
-        @type alias: L{str}
+        @type alias: `str`
         '''
 
         if self.dir(alias) is not None:
@@ -649,9 +649,9 @@ class FSManager(object):
         Open file at relative path
 
         @param alias: Alias or relative path
-        @type alias: L{str}
+        @type alias: `str`
         @param mode: Mode of operating
-        @param mode: L{str}
+        @param mode: `str`
         '''
 
         if self.file(alias) is not None:
@@ -684,7 +684,7 @@ class FSManager(object):
         Check if resource exists at relative path
 
         @param path: Relative path
-        @type path: L{str}
+        @type path: `str`
         '''
 
         return os.path.exists(self.abspath(path))
@@ -694,7 +694,7 @@ class FSManager(object):
         Return absolute path instead of relative one
 
         @param path: Relative or absolute path
-        @type path: L{str}
+        @type path: `str`
         '''
         if path.startswith("/"):
             return os.path.abspath(path)
@@ -706,11 +706,11 @@ class FSManager(object):
         Make the file within prefix path
 
         @param alias: Alias name of the file to make
-        @type alias: L{str}
+        @type alias: `str`
         @param path: Path with the file name included
-        @type path: L{str}
+        @type path: `str`
         @param mode: Mode bits of file
-        @type mode: L{int}
+        @type mode: `int`
         '''
 
         if alias is None and path is None:
@@ -743,11 +743,11 @@ class FSManager(object):
         Make the directory within prefix path
 
         @param alias: Alias name of the directory to make
-        @type alias: L{str}
+        @type alias: `str`
         @param path: Path with the directory name included
-        @type path: L{str}
+        @type path: `str`
         @param mode: Mode bits of directory
-        @type mode: L{int}
+        @type mode: `int`
         '''
 
         if alias is None and path is None:
@@ -780,9 +780,9 @@ class FSManager(object):
         Change mode bits of the resource
 
         @param alias: Alias name of the resource
-        @type alias: L{str}
+        @type alias: `str`
         @param mode: Mode bits of the resource
-        @type mode: L{int}
+        @type mode: `int`
         '''
 
         if self.resource(alias) is not None:
@@ -795,7 +795,7 @@ class FSManager(object):
         Remove the resource
 
         @param alias: Alias name of the resource to remove
-        @type alias: L{str}
+        @type alias: `str`
         '''
 
         if self.resource(alias) is not None:
@@ -809,9 +809,9 @@ class FSManager(object):
         Make a copy of resource
 
         @param alias: Alias name of the resource to copy
-        @type alias: L{str}
+        @type alias: `str`
         @param dst: Destination path with the resource name included
-        @type dst: L{str}
+        @type dst: `str`
         '''
 
         if self.resource(alias) is not None:
@@ -823,14 +823,16 @@ class FSManager(object):
         Move the resource
 
         @param alias: Alias name of the resource to move
-        @type alias: L{str}
+        @type alias: `str`
         @param dst: Destination path with the resource name included
-        @type dst: L{str}
+        @type dst: `str`
         '''
 
         if self.resource(alias) is not None:
             self._prepare(self.abspath(dst))
             self.current_directory[alias].move(self.abspath(dst))
+            if not self.temporary:
+                self.save()
 
     def ls(self):
         '''List all the resources under prefix'''
@@ -900,7 +902,7 @@ class FSManager(object):
 
         @param root_binded: All the resources of fs structure will be binded
         within one root if that parameter is True
-        @type root_binded: L{bool}
+        @type root_binded: `bool`
         '''
 
         def dir_cerator(long_path):
@@ -945,7 +947,7 @@ class FSManager(object):
         Save full file system structure to one file
 
         @param path: Path to the structure file
-        @type path: L{str}
+        @type path: `str`
         '''
 
         self.cd_root()
@@ -977,7 +979,7 @@ class FSManager(object):
         Load full system structure from one file
 
         @param path: Path to the structure file
-        @type path: L{str}
+        @type path: `str`
         '''
 
         self.cd_root()
@@ -1004,7 +1006,7 @@ class FSManager(object):
         Save file's hashes to .json structure file
 
         @param type: Hashsum method
-        @type type: L{str}
+        @type type: `str`
         '''
 
         if self.exists(".fs-structure.json"):
@@ -1032,9 +1034,9 @@ class FSManager(object):
         Compare current file hashes to saved in the .json structure file
 
         @param type: Hashsum method
-        @type type: L{str}
+        @type type: `str`
         @param log_warnings: Log warnings about mismatch
-        @type log_warnings: L{bool}
+        @type log_warnings: `bool`
         @return: List of mismatches
         '''
 
