@@ -1,6 +1,7 @@
 from collections import MutableSequence
 from collections import MutableMapping
 from contextlib import contextmanager
+from copy import deepcopy
 import os
 import shutil
 import tempfile
@@ -461,10 +462,10 @@ class AliasedDirectoryObject(MutableMapping, DirectoryObject, object):
     # Collection methods start
 
     def __getitem__(self, key):
-        return self.resources[self.aliases[key]]
+        return self.aliases[key]
 
     def __setitem__(self, key, value):
-        self.aliases[key] = self.resources.index(value)
+        self.aliases[key] = self.resources[self.resources.index(value)]
 
     def __delitem__(self, key):
         del self.aliases[key]
@@ -790,6 +791,24 @@ class FSManager(object):
             if not self.temporary:
                 self.save()
 
+    def chalias(self, alias, new_alias):
+        '''
+        Change alias of the resource
+
+        @param alias: Alias name of the resource
+        @type alias: `str`
+        @param new_alias: New alias name of the resource
+        @type new_alias: `str`
+        '''
+
+        if self.resource(alias) is not None:
+            self.current_directory[new_alias] = \
+                deepcopy(self.current_directory[alias])
+            del self.current_directory[alias]
+        else:
+            log.warning("There is no such resource with alias {}".
+                        format(alias))
+
     def rm(self, alias):
         '''
         Remove the resource
@@ -815,8 +834,19 @@ class FSManager(object):
         '''
 
         if self.resource(alias) is not None:
-            self._prepare(self.abspath(dst))
-            self.current_directory[alias].copy(self.abspath(dst))
+            if self.dir(dst) is not None:
+                self.current_directory[os.path.join(dst, alias)] = \
+                    self.current_directory[alias]. \
+                        copy(os.path.join(self.dir(dst).path, alias))
+            elif self.file(dst) is not None:
+                self.current_directory[dst] = \
+                    self.current_directory[alias].copy(self.dir(dst).path)
+            else:
+                abs_path = self.abspath(dst)
+                self._prepare(abs_path)
+                new_object = self.current_directory[alias].copy(abs_path)
+                if not dst.startswith("/"):
+                    self.current_directory[dst] = new_object
 
     def mv(self, alias, dst):
         '''
