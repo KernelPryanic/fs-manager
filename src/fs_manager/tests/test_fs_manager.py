@@ -146,6 +146,7 @@ class TestFSManager(unittest.TestCase):
             fsm = FSManager(temporary=True)
             fsm.mkfile("rambo", "test1/test2/test3")
             fsm.rm("rambo")
+            fsm.ls()
             if fsm.exists("test1/test2/test3"):
                 raise Exception("File hasn't been removed")
         except Exception as exc:
@@ -157,104 +158,122 @@ class TestFSManager(unittest.TestCase):
             fsm = FSManager(temporary=True)
             fsm.mkdir("rambo", "test1/test2/test3")
             fsm.rm("rambo")
+            fsm.ls()
             if fsm.exists("test1/test2/test3"):
                 raise Exception("Directory hasn't been removed")
         except Exception as exc:
             traceback.print_exc()
             self.fail(exc)
 
-    def test_cp_file(self):
+    def test_cp_file_alias(self):
         try:
             fsm = FSManager(temporary=True)
             fsm.mkfile("rambo", "test1/test2/test3")
             fsm.cp("rambo", "test1/test22/test33")
-            if not fsm.exists("test1/test22/test33"):
+            if not (fsm.file("test1/test22/test33") is not None and
+                    fsm.exists("test1/test22/test33")):
                 raise Exception("File hasn't been copied")
         except Exception as exc:
             traceback.print_exc()
             self.fail(exc)
 
-    def test_cp_dir(self):
+    def test_cp_dir_alias(self):
         try:
             fsm = FSManager(temporary=True)
             fsm.mkdir("rambo", "test1/test2/test3")
             fsm.cp("rambo", "test1/test22/test33")
-            if not fsm.exists("test1/test22/test33"):
+            if not (fsm.dir("test1/test22/test33") is not None and
+                    fsm.exists("test1/test22/test33")):
                 raise Exception("Directory hasn't been copied")
         except Exception as exc:
             traceback.print_exc()
             self.fail(exc)
 
-    def test_cp_file_abs(self):
+    def test_cp_file_path(self):
         try:
             fsm = FSManager(temporary=True)
             fsm.mkfile("rambo", "test1/test2/test3")
-            fsm.cp("rambo", os.path.join(fsm.prefix_path,
-                                         "test1/test22/test33"))
-            if not os.path.exists(os.path.join(fsm.prefix_path,
-                                               "test1/test22/test33")):
+            fsm.cp("rambo", "mambo", "test1/test22/test33")
+            if not (fsm.file("mambo") is not None and
+                    os.path.exists(os.path.join(fsm.prefix_path,
+                                                "test1/test22/test33"))):
                 raise Exception("File hasn't been copied")
         except Exception as exc:
             traceback.print_exc()
             self.fail(exc)
 
-    def test_cp_dir_abs(self):
+    def test_cp_dir_path(self):
         try:
             fsm = FSManager(temporary=True)
             fsm.mkdir("rambo", "test1/test2/test3")
-            fsm.cp("rambo", os.path.join(fsm.prefix_path,
-                                         "test1/test22/test33"))
-            if not os.path.exists(os.path.join(fsm.prefix_path,
-                                               "test1/test22/test33")):
+            fsm.cp("rambo", "mambo", "test1/test22/test33")
+            if not (fsm.dir("mambo") is not None and
+                    os.path.exists(os.path.join(fsm.prefix_path,
+                                                "test1/test22/test33"))):
                 raise Exception("Directory hasn't been copied")
         except Exception as exc:
             traceback.print_exc()
             self.fail(exc)
 
-    def test_mv_file(self):
+    def test_mv_file_alias(self):
         try:
             fsm = FSManager(temporary=True)
             fsm.mkfile("rambo", "test1/test2/test3")
             fsm.mv("rambo", "test1/test22/test33")
-            if not fsm.exists("test1/test22/test33"):
+            if not (fsm.file("test1/test22/test33") is not None and
+                    fsm.exists("test1/test22/test33")):
                 raise Exception("File hasn't been moved")
         except Exception as exc:
             traceback.print_exc()
             self.fail(exc)
 
-    def test_mv_dir(self):
+    def test_mv_dir_alias(self):
         try:
             fsm = FSManager(temporary=True)
             fsm.mkdir("rambo", "test1/test2/test3")
             fsm.mv("rambo", "test1/test22/test33")
-            if not fsm.exists("test1/test22/test33"):
+            if not (fsm.dir("test1/test22/test33") is not None and
+                    fsm.exists("test1/test22/test33")):
                 raise Exception("Directory hasn't been moved")
         except Exception as exc:
             traceback.print_exc()
             self.fail(exc)
 
-    def test_mv_file_abs(self):
+    def test_mv_file_path(self):
         try:
             fsm = FSManager(temporary=True)
             fsm.mkfile("rambo", "test1/test2/test3")
-            fsm.mv("rambo", os.path.join(fsm.prefix_path,
-                                         "test1/test22/test33"))
-            if not os.path.exists(os.path.join(fsm.prefix_path,
-                                               "test1/test22/test33")):
+            fsm.mv("rambo", "mambo", "test1/test22/test33")
+            if not (fsm.file("mambo") is not None and
+                    os.path.exists(os.path.join(fsm.prefix_path,
+                                                "test1/test22/test33"))):
                 raise Exception("File hasn't been moved")
         except Exception as exc:
             traceback.print_exc()
             self.fail(exc)
 
-    def test_mv_dir_abs(self):
+    def test_mv_dir_path(self):
         try:
             fsm = FSManager(temporary=True)
             fsm.mkdir("rambo", "test1/test2/test3")
-            fsm.mv("rambo", os.path.join(fsm.prefix_path,
-                                         "test1/test22/test33"))
-            if not os.path.exists(os.path.join(fsm.prefix_path,
-                                               "test1/test22/test33")):
+            fsm.mv("rambo", "mambo", "test1/test22/test33")
+            if not (fsm.dir("mambo") is not None and
+                    os.path.exists(os.path.join(fsm.prefix_path,
+                                                "test1/test22/test33"))):
                 raise Exception("Directory hasn't been moved")
+        except Exception as exc:
+            traceback.print_exc()
+            self.fail(exc)
+
+    def test_chalias(self):
+        try:
+            fsm = FSManager(temporary=True)
+            fsm.mkdir("rambo", "test1/test2/test3")
+            fsm.chalias("rambo", "mambo")
+            if not (fsm.dir("mambo") is not None and
+                    os.path.exists(os.path.join(fsm.prefix_path,
+                                                "test1/test2/test3"))):
+                raise Exception("Error occurred while changing alias")
         except Exception as exc:
             traceback.print_exc()
             self.fail(exc)

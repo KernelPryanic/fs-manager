@@ -1,6 +1,7 @@
 from collections import MutableSequence
 from collections import MutableMapping
 from contextlib import contextmanager
+from copy import deepcopy
 import os
 import shutil
 import tempfile
@@ -461,10 +462,10 @@ class AliasedDirectoryObject(MutableMapping, DirectoryObject, object):
     # Collection methods start
 
     def __getitem__(self, key):
-        return self.resources[self.aliases[key]]
+        return self.aliases[key]
 
     def __setitem__(self, key, value):
-        self.aliases[key] = self.resources.index(value)
+        self.aliases[key] = self.resources[self.resources.index(value)]
 
     def __delitem__(self, key):
         del self.aliases[key]
@@ -790,6 +791,26 @@ class FSManager(object):
             if not self.temporary:
                 self.save()
 
+    def chalias(self, alias, new_alias):
+        '''
+        Change alias of the resource
+
+        @param alias: Alias name of the resource
+        @type alias: `str`
+        @param new_alias: New alias name of the resource
+        @type new_alias: `str`
+        '''
+
+        if self.resource(alias) is not None:
+            self.current_directory[new_alias] = \
+                deepcopy(self.current_directory[alias])
+            del self.current_directory[alias]
+            if not self.temporary:
+                self.save()
+        else:
+            log.warning("There is no such resource with alias {}".
+                        format(alias))
+
     def rm(self, alias):
         '''
         Remove the resource
@@ -804,33 +825,72 @@ class FSManager(object):
             if not self.temporary:
                 self.save()
 
-    def cp(self, alias, dst):
+    def cp(self, salias, dalias, dst=None):
         '''
         Make a copy of resource
 
-        @param alias: Alias name of the resource to copy
-        @type alias: `str`
-        @param dst: Destination path with the resource name included
+        @param salias: Alias name of the source resource
+        @type salias: `str`
+        @param dalias: Alias name of the destination resource
+        @type dalias: `str`
+        @param dst: Relative destination path
         @type dst: `str`
         '''
 
-        if self.resource(alias) is not None:
-            self._prepare(self.abspath(dst))
-            self.current_directory[alias].copy(self.abspath(dst))
+        if dalias.startswith("/") or dst is not None and dst.startswith("/"):
+            log.info("Only relative paths allowed")
+            return
 
-    def mv(self, alias, dst):
+        if self.resource(salias) is not None:
+            if dst is not None:
+                abs_path = self.abspath(dst)
+                self._prepare(abs_path)
+                self.current_directory[dalias] = \
+                    self.current_directory[salias].copy(abs_path)
+            elif self.dir(dalias) is not None:
+                self.current_directory[os.path.join(dalias, salias)] = \
+                    self.current_directory[salias]. \
+                        copy(os.path.join(self.dir(dalias).path, salias))
+            elif self.file(dalias) is not None:
+                log.info("There is already file witch such alias {}".
+                         format(dalias))
+            else:
+                abs_path = self.abspath(dalias)
+                self._prepare(abs_path)
+                self.current_directory[dalias] = \
+                    self.current_directory[salias].copy(abs_path)
+            if not self.temporary:
+                self.save()
+
+    def mv(self, salias, dalias, dst=None):
         '''
         Move the resource
 
-        @param alias: Alias name of the resource to move
-        @type alias: `str`
-        @param dst: Destination path with the resource name included
+        @param salias: Alias name of the resource to move
+        @type salias: `str`
+        @param dalias: Alias name of the destination resource
+        @type dalias: `str`
+        @param dst: Relative destination path
         @type dst: `str`
         '''
 
-        if self.resource(alias) is not None:
-            self._prepare(self.abspath(dst))
-            self.current_directory[alias].move(self.abspath(dst))
+        if dalias.startswith("/") or dst is not None and dst.startswith("/"):
+            log.info("Only relative paths allowed")
+            return
+
+        if self.resource(salias) is not None:
+            if dst is not None:
+                abs_path = self.abspath(dst)
+                self._prepare(abs_path)
+                self.current_directory[salias].move(abs_path)
+            elif self.dir(dalias) is not None:
+                self.current_directory[salias].move(self.dir(dalias).path)
+            else:
+                abs_path = self.abspath(dalias)
+                self._prepare(abs_path)
+                self.current_directory[salias].move(abs_path)
+            self.current_directory[dalias] = self.current_directory[salias]
+            del self.current_directory[salias]
             if not self.temporary:
                 self.save()
 
